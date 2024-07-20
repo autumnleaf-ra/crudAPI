@@ -125,10 +125,7 @@ describe('APi V1 Query Database', () => {
 
     test('should return 200, when add new helmet', async () => {
       const mockAddHelmetList = {
-        status: '00000',
-        message: 'Success',
-        data: "Added 'Arai J' as '2000000' to helmet with stock 5",
-        transaction_id: 'A3022407191710363810'
+        data: "Added 'Arai J' as '2000000' to helmet with stock 5"
       };
 
       jest.spyOn(Database, 'addHelmet').mockResolvedValue(mockAddHelmetList);
@@ -177,10 +174,7 @@ describe('APi V1 Query Database', () => {
 
     test('should return 200, when edit helmet', async () => {
       const mockEditHelmetList = {
-        status: '00000',
-        message: 'Success',
-        data: 'Helmet with id 4 has been updated price to 52.55 and stock to 100 ',
-        transaction_id: 'A3022407192129224470'
+        data: 'Helmet with id 4 has been updated price to 52.55 and stock to 100 '
       };
       jest.spyOn(Database, 'editHelmet').mockResolvedValue(mockEditHelmetList);
       const response = await Request(server).put('/api/v1/helmet/edit_helmet/4').send({
@@ -233,10 +227,7 @@ describe('APi V1 Query Database', () => {
 
     test('should return 200, when delete helmet', async () => {
       const mockDeleteHelmetList = {
-        status: '00000',
-        message: 'Success',
-        data: 'Delete id 6 successfully',
-        transaction_id: 'A3022407192140217440'
+        data: 'Delete id 6 successfully'
       };
 
       jest.spyOn(Database, 'deleteHelmet').mockResolvedValue(mockDeleteHelmetList);
