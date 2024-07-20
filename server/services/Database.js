@@ -14,67 +14,39 @@ const helmetTable = process.env.HELMET_TABLE || 'helmets';
 const helmetTypeTable = process.env.HELMET_TYPE_TABLE || 'type';
 
 // Helmet
-
-const getListHelmet = async () => {
+const executeQuery = async (query, values = []) => {
   let connection = null;
   try {
+    connection = await connectionPool.getConnection();
     const timeStart = process.hrtime();
-
-    connection = connectionPool && (await connectionPool.getConnection());
-    const querySelect =
-      'helmets.id, helmets.name, helmets.price, helmets.stock, helmets.name, type.name as type FROM helmets INNER JOIN type ON helmets.type_id=type.id';
-    const [rawResult] = await connection.query(`SELECT ${querySelect}`);
-    const result = Object.values(JSON.parse(JSON.stringify(rawResult)));
-
-    // Log Transaction
+    const [result] = await connection.query(query, values);
     const timeDiff = process.hrtime(timeStart);
     const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Database', 'getListHelmet', 'INFO'], {
-      message: { timeTaken },
-      result
+    CommonHelper.log(['Database', 'Operation', 'INFO'], {
+      message: { query, timeTaken }
     });
-
+    if (connection) connection.release();
     return result;
   } catch (error) {
-    CommonHelper.log(['Database', 'getListHelmet', 'ERROR'], {
+    CommonHelper.log(['Database', 'Operation', 'ERROR'], {
       message: `${error}`
     });
+    if (connection) connection.release();
     throw error;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 };
 
+const getListHelmet = async () => {
+  const querySelect =
+    'SELECT helmets.id, helmets.name, helmets.price, helmets.stock, helmets.name, type.name as type FROM helmets INNER JOIN type ON helmets.type_id=type.id';
+  const rawResult = await executeQuery(querySelect);
+  return Object.values(JSON.parse(JSON.stringify(rawResult)));
+};
+
 const getTypeHelmet = async () => {
-  let connection = null;
-  try {
-    const timeStart = process.hrtime();
-
-    connection = connectionPool && (await connectionPool.getConnection());
-    const [rawResult] = await connection.query(`SELECT * FROM ${helmetTypeTable}`);
-    const result = Object.values(JSON.parse(JSON.stringify(rawResult)));
-
-    // Log Transaction
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Database', 'getListTypeHelmet', 'INFO'], {
-      message: { timeTaken },
-      result
-    });
-
-    return result;
-  } catch (error) {
-    CommonHelper.log(['Database', 'getListTypeHelmet', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
+  const query = `SELECT * FROM ${helmetTypeTable}`;
+  const rawResult = await executeQuery(query);
+  return Object.values(JSON.parse(JSON.stringify(rawResult)));
 };
 
 const addHelmet = async (type, name, price, stock) => {
@@ -106,61 +78,15 @@ const addHelmet = async (type, name, price, stock) => {
 };
 
 const editHelmet = async (id, price, stock) => {
-  let connection = null;
-  try {
-    const timeStart = process.hrtime();
-
-    connection = connectionPool && (await connectionPool.getConnection());
-    const query = `UPDATE ${helmetTable} SET price = ?, stock = ? WHERE id = ?`;
-    const values = [price, stock, id];
-    const [result] = await connection.query(query, values);
-
-    // Log Transaction
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Database', 'editHelmet', 'INFO'], {
-      message: { timeTaken }
-    });
-    return result?.affectedRows > 0;
-  } catch (error) {
-    CommonHelper.log(['Database', 'editHelmet', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
+  const query = `UPDATE ${helmetTable} SET price = ?, stock = ? WHERE id = ?`;
+  const result = await executeQuery(query, [price, stock, id]);
+  return result?.affectedRows > 0;
 };
 
 const deleteHelmet = async (id) => {
-  let connection = null;
-  try {
-    const timeStart = process.hrtime();
-
-    connection = connectionPool && (await connectionPool.getConnection());
-    const query = `DELETE FROM ${helmetTable} WHERE id = ?`;
-    const values = [id];
-    const [result] = await connection.query(query, values);
-
-    // Log Transaction
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Database', 'deleteHelmet', 'INFO'], {
-      message: { timeTaken }
-    });
-    return result?.affectedRows > 0;
-  } catch (error) {
-    CommonHelper.log(['Database', 'deleteHelmet', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
+  const query = `DELETE FROM ${helmetTable} WHERE id = ?`;
+  const result = await executeQuery(query, [id]);
+  return result?.affectedRows > 0;
 };
 
 module.exports = {

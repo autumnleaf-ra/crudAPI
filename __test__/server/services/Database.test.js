@@ -141,11 +141,28 @@ describe('Phonebook CRUD operations', () => {
   });
 
   describe('deleteHelmet', () => {
+    it('should return true when delete helmet entry', async () => {
+      const mockQuery = {
+        fieldCount: 0,
+        affectedRows: 1,
+        insertId: 11,
+        serverStatus: 2,
+        warningCount: 0,
+        message: '',
+        protocol41: true,
+        changedRows: 0
+      };
+      queryMock.mockResolvedValue([mockQuery]);
+      const result = await deleteHelmet(6);
+      expect(result).toBe(true);
+      expect(releaseMock).toHaveBeenCalled();
+    });
+
     it('should throw error', async () => {
       const mockError = new Error('Mock error');
       queryMock.mockRejectedValue(mockError);
-      await expect(deleteHelmet(4)).rejects.toThrow(mockError);
-      expect(releaseMock).toHaveBeenCalled(); // Check if release was called
+      await expect(deleteHelmet(6)).rejects.toThrow(mockError);
+      expect(releaseMock).toHaveBeenCalled();
     });
   });
 });
