@@ -9,6 +9,7 @@ const port = process.env.PORT || 8080;
 
 // Import Route
 const helmet = require('./server/api/helmet');
+const helmetv2 = require('./server/api/helmetv2');
 
 // Middleware
 dotenv.config();
@@ -33,6 +34,7 @@ app.use((req, res, next) => {
 
 // Route middlewares
 app.use('/api/v1/helmet', helmet);
+app.use('/api/v2/helmet', helmetv2);
 
 app.get('/sys/ping', (req, res) => {
   req.startTime = process.hrtime();

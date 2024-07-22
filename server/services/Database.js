@@ -50,31 +50,8 @@ const getTypeHelmet = async () => {
 };
 
 const addHelmet = async (type, name, price, stock) => {
-  let connection = null;
-  try {
-    const timeStart = process.hrtime();
-
-    connection = connectionPool && (await connectionPool.getConnection());
-    const query = `INSERT INTO ${helmetTable} (type_id, name, price, stock) VALUES (?, ?, ?, ?)`;
-    const values = [type, name, price, stock];
-    await connection.query(query, values);
-
-    // Log Transaction
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Database', 'addHelmet', 'INFO'], {
-      message: { timeTaken }
-    });
-  } catch (error) {
-    CommonHelper.log(['Database', 'addHelmet', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
+  const query = `INSERT INTO ${helmetTable} (type_id, name, price, stock) VALUES (?, ?, ?, ?)`;
+  await executeQuery(query, [type, name, price, stock]);
 };
 
 const editHelmet = async (id, price, stock) => {

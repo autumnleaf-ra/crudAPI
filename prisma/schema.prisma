@@ -7,10 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model phonebook {
-  id     Int    @id @default(autoincrement())
-  name   String @db.VarChar(255)
-  number String @unique(map: "number") @db.VarChar(255)
+model helmets {
+  id      Int     @id @default(autoincrement())
+  type_id Int?
+  name    String? @db.VarChar(255)
+  price   Float   @db.Float
+  stock   Int?
+  type    type?   @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "helmets_ibfk_1")
 
-  @@index([number], map: "number_2")
+  @@index([type_id], map: "type_id")
+}
+
+model type {
+  id      Int       @id @default(autoincrement())
+  name    String    @db.VarChar(255)
+  helmets helmets[]
 }

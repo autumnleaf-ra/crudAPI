@@ -1,128 +1,91 @@
 const { PrismaClient } = require('@prisma/client');
-const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
-
 const CommonHelper = require('../helpers/CommonHelper');
 
 const prisma = new PrismaClient();
 
-const getListPhonebook = async () => {
+const executePrismaOperation = async (operationName, operationFunction) => {
   try {
     const timeStart = process.hrtime();
-    const data = await prisma.phonebook.findMany();
-
+    const data = await operationFunction();
     const timeDiff = process.hrtime(timeStart);
     const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Prisma', 'getListPhonebook', 'INFO'], {
+    CommonHelper.log(['Prisma', operationName, 'INFO'], {
       message: { timeTaken },
       data
     });
-
+    prisma.$disconnect();
     return data;
   } catch (error) {
-    CommonHelper.log(['Database', 'getListPhonebook', 'ERROR'], {
+    prisma.$disconnect();
+    if (error?.code === 'P2025') {
+      // Handle the case where the record is not found
+      CommonHelper.log(['Prisma', operationName, 'WARN'], {
+        message: `No Helmet entry found`
+      });
+      return false;
+    }
+    // Log other errors
+    CommonHelper.log(['Prisma', operationName, 'ERROR'], {
       message: `${error}`
     });
     throw error;
-  } finally {
-    await prisma.$disconnect();
   }
 };
 
-const addPhonebook = async (name, number) => {
-  try {
-    const timeStart = process.hrtime();
-    const data = await prisma.phonebook.create({
+const getListHelmet = async () =>
+  executePrismaOperation('getListHelmet', () =>
+    prisma.helmets.findMany({
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        stock: true,
+        type: {
+          select: {
+            name: true
+          }
+        }
+      }
+    })
+  );
+
+const getTypeHelmet = async () => executePrismaOperation('getTypeHelmet', () => prisma.type.findMany());
+
+const addHelmet = async (type, name, price, stock) => {
+  await executePrismaOperation('addHelmet', async () => {
+    await prisma.helmets.create({
       data: {
+        type_id: Number(type),
         name,
-        number
+        price,
+        stock
       }
     });
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Prisma', 'addPhonebook', 'INFO'], {
-      message: { timeTaken },
-      data
-    });
-  } catch (error) {
-    CommonHelper.log(['Prisma', 'addPhonebook', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
+  });
 };
 
-const editPhonebook = async (id, name, number) => {
-  try {
-    const timeStart = process.hrtime();
-    const data = await prisma.phonebook.update({
+const editHelmet = async (id, price, stock) =>
+  executePrismaOperation('editHelmet', async () => {
+    const result = await prisma.helmets.update({
       where: {
         id: Number(id)
       },
       data: {
-        name,
-        number
+        price,
+        stock
       }
     });
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Prisma', 'editPhonebook', 'INFO'], {
-      message: { timeTaken },
-      data
-    });
-    return true;
-  } catch (error) {
-    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
-      // Handle the case where the record is not found
-      CommonHelper.log(['Prisma', 'editPhonebook', 'WARN'], {
-        message: `No phonebook entry found with id ${id}`
-      });
-      return false;
-    }
+    return !!result;
+  });
 
-    // Log other errors
-    CommonHelper.log(['Prisma', 'editPhonebook', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
-};
-
-const deletePhonebook = async (id) => {
-  try {
-    const timeStart = process.hrtime();
-    const data = await prisma.phonebook.delete({
+const deleteHelmet = async (id) =>
+  executePrismaOperation('deleteHelmet', async () => {
+    const result = await prisma.helmets.delete({
       where: {
         id: Number(id)
       }
     });
-    const timeDiff = process.hrtime(timeStart);
-    const timeTaken = Math.round((timeDiff[0] * 1e9 + timeDiff[1]) / 1e6);
-    CommonHelper.log(['Prisma', 'deletePhonebook', 'INFO'], {
-      message: { timeTaken },
-      data
-    });
-    return true;
-  } catch (error) {
-    if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
-      // Handle the case where the record is not found
-      CommonHelper.log(['Prisma', 'deletePhonebook', 'WARN'], {
-        message: `No phonebook entry found with id ${id}`
-      });
-      return false;
-    }
+    return !!result;
+  });
 
-    // Log other errors
-    CommonHelper.log(['Prisma', 'deletePhonebook', 'ERROR'], {
-      message: `${error}`
-    });
-    throw error;
-  } finally {
-    await prisma.$disconnect();
-  }
-};
-
-module.exports = { getListPhonebook, addPhonebook, editPhonebook, deletePhonebook };
+module.exports = { getListHelmet, getTypeHelmet, addHelmet, editHelmet, deleteHelmet };
